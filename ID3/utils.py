@@ -14,7 +14,7 @@ from sklearn.model_selection import KFold
 ========================================================================
 """
 
-ID1 = 123456789  # TODO: change it to your personal ID 
+ID1 = 315173344  # TODO: change it to your personal ID
 ID2 = 987654321  # TODO: change it to your personal ID 
 
 
@@ -41,11 +41,9 @@ def accuracy(y: np.array, y_pred: np.array):
     assert y.shape == y_pred.shape
     assert y.ndim == 1
 
-    # ====== YOUR CODE: ======
-    raise NotImplementedError
-    # ========================
+    y_equal = np.sum((np.array(y) == np.array(y_pred)).astype(int))
 
-    return accuracy_val
+    return y_equal / len(y)
 
 
 def rm_row(n, top=330):

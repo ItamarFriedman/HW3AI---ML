@@ -1,7 +1,10 @@
+from __future__ import annotations
 import math
 
-from DecisonTree import Leaf, Question, DecisionNode, class_counts
-from utils import *
+import numpy
+import pandas as pd
+from ID3.DecisonTree import Leaf, Question, DecisionNode, class_counts, unique_vals
+from ID3.utils import *
 
 """
 Make the imports of python packages needed
@@ -31,10 +34,9 @@ class ID3:
         counts = class_counts(rows, labels)
         _entropy = 0.0
 
-        # ====== YOUR CODE: ======
-        raise NotImplementedError
-        # ========================
-
+        samples = len(rows)
+        probabilities = [value / samples for key, value in counts.items()]
+        _entropy = -np.sum([num * np.log2(num) for num in probabilities])
         return _entropy
 
     def info_gain(self, left, left_labels, right, right_labels, current_info_gain=None):
@@ -55,9 +57,11 @@ class ID3:
             'The split of current node is not right, rows size should be equal to labels size.'
 
         info_gain_value = 0.0
-        # ====== YOUR CODE: ======
-        raise NotImplementedError
-        # ========================
+        total_samples = len(left) + len(right)
+        left_weight = len(left) / total_samples
+        right_weight = len(right) / total_samples
+        info_gain_value = current_info_gain - right_weight * self.entropy(right, right_labels) - \
+                          left_weight * self.entropy(left, left_labels)
 
         return info_gain_value
 
@@ -75,12 +79,22 @@ class ID3:
         #   - If so, add it to 'true rows', otherwise, add it to 'false rows'.
         #   - Calculate the info gain using the `info_gain` method.
 
-        gain, true_rows, true_labels, false_rows, false_labels = None, None, None, None, None
+        gain, true_rows, true_labels, false_rows, false_labels = 0, [], [], [], []
         assert len(rows) == len(labels), 'Rows size should be equal to labels size.'
 
-        # ====== YOUR CODE: ======
-        raise NotImplementedError
-        # ========================
+        # Assuming rows is a numpy array and labels is a numpy array
+        true_indices = [i for i, row in enumerate(rows) if question.match(row)]
+        false_indices = [i for i, row in enumerate(rows) if not question.match(row)]
+
+        if len(true_indices):
+            true_rows = rows[np.array(true_indices)]
+            true_labels = labels[np.array(true_indices)]
+        if len(false_indices):
+            false_rows = rows[np.array(false_indices)]
+            false_labels = labels[np.array(false_indices)]
+
+        # right is true
+        gain = self.info_gain(false_rows, false_labels, true_rows, true_labels, current_uncertainty)
 
         return gain, true_rows, true_labels, false_rows, false_labels
 
@@ -100,9 +114,14 @@ class ID3:
         best_true_rows, best_true_labels = None, None
         current_uncertainty = self.entropy(rows, labels)
 
-        # ====== YOUR CODE: ======
-        raise NotImplementedError
-        # ========================
+        for feature in range(len(rows[0])):
+            for value in unique_vals(rows, feature):
+                question = Question(self.label_names[feature], feature, value)  # todo: feature name
+                gain, true_rows, true_labels, false_rows, false_labels = \
+                    self.partition(rows, labels, question, current_uncertainty)
+                if gain >= best_gain:
+                    best_gain, best_question, best_false_rows, best_false_labels, best_true_rows, best_true_labels = \
+                        gain, question, false_rows, false_labels, true_rows, true_labels
 
         return best_gain, best_question, best_true_rows, best_true_labels, best_false_rows, best_false_labels
 
@@ -119,13 +138,24 @@ class ID3:
         #   - Try partitioning the dataset using the feature that produces the highest gain.
         #   - Recursively build the true, false branches.
         #   - Build the Question node which contains the best question with true_branch, false_branch as children
-        best_question = None
-        true_branch, false_branch = None, None
 
-        # ====== YOUR CODE: ======
-        raise NotImplementedError
-        # ========================
+        if isinstance(rows[0], np.float64) or len(rows) <= self.min_for_pruning:
+            print("1 sample")
+            print(rows.shape)
+            return Leaf(rows, labels)
 
+        best_gain, best_question, best_true_rows, best_true_labels, best_false_rows, best_false_labels = \
+            self.find_best_split(rows, labels)
+
+        if best_gain <= 0:
+            print("no gain")
+            print(rows.shape)
+            return Leaf(rows, labels)
+
+        true_branch, false_branch = self.build_tree(best_true_rows, best_true_labels), \
+                                    self.build_tree(best_false_rows, best_false_labels)
+
+        print(best_question.column, best_question.value)
         return DecisionNode(best_question, true_branch, false_branch)
 
     def fit(self, x_train, y_train):
@@ -135,10 +165,7 @@ class ID3:
         :param y_train: training data labels.
         """
         # TODO: Build the tree that fits the input data and save the root to self.tree_root
-
-        # ====== YOUR CODE: ======
-        raise NotImplementedError
-        # ========================
+        self.tree_root = self.build_tree(x_train, y_train)
 
     def predict_sample(self, row, node: DecisionNode | Leaf = None):
         """
@@ -154,9 +181,13 @@ class ID3:
             node = self.tree_root
         prediction = None
 
-        # ====== YOUR CODE: ======
-        raise NotImplementedError
-        # ========================
+        while isinstance(node, DecisionNode):
+            if node.question.match(row):
+                node = node.true_branch
+            else:
+                node = node.false_branch
+
+        prediction = max(node.predictions, key=node.predictions.get)
 
         return prediction
 
@@ -169,10 +200,6 @@ class ID3:
         # TODO:
         #  Implement ID3 class prediction for set of data.
 
-        y_pred = None
-
-        # ====== YOUR CODE: ======
-        raise NotImplementedError
-        # ========================
+        y_pred = [self.predict_sample(row) for row in rows]
 
         return y_pred

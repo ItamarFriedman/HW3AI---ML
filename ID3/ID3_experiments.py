@@ -1,5 +1,5 @@
-from ID3 import ID3
-from utils import *
+from ID3.ID3 import ID3
+from ID3.utils import *
 
 """
 Make the imports of python packages needed
@@ -62,10 +62,16 @@ def basic_experiment(x_train, y_train, x_test, y_test, formatted_print=False):
     acc = None
 
     # ====== YOUR CODE: ======
-    raise NotImplementedError
+    id3_model = ID3(label_names=x_train.columns.tolist())
+    id3_model.fit(np.array(x_train), np.array(y_train))
+
+
+
+    y_pred = id3_model.predict(np.array(x_test))
+    acc = accuracy(np.array(y_test), np.array(y_pred))
     # ========================
 
-    assert acc > 0.9, 'you should get an accuracy of at least 90% for the full ID3 decision tree'
+    assert acc > 0.9, 'you should get an accuracy of at least 90% for the full ID3 decision tree' + str(acc)
     print(f'Test Accuracy: {acc * 100:.2f}%' if formatted_print else acc)
 
 
