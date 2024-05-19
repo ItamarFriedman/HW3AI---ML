@@ -3,8 +3,8 @@ import math
 
 import numpy
 import pandas as pd
-from ID3.DecisonTree import Leaf, Question, DecisionNode, class_counts, unique_vals
-from ID3.utils import *
+from DecisonTree import Leaf, Question, DecisionNode, class_counts, unique_vals
+from utils import *
 
 """
 Make the imports of python packages needed
@@ -115,7 +115,13 @@ class ID3:
         current_uncertainty = self.entropy(rows, labels)
 
         for feature in range(len(rows[0])):
-            for value in unique_vals(rows, feature):
+            vals = sorted(unique_vals(rows, feature))
+            thresholds = vals
+            if len(vals) > 1: # more than one value
+                thresholds = []
+                for i in range(0, len(vals)-1):
+                    thresholds.append((vals[i]+vals[i+1])/2)
+            for value in thresholds:
                 question = Question(self.label_names[feature], feature, value)  # todo: feature name
                 gain, true_rows, true_labels, false_rows, false_labels = \
                     self.partition(rows, labels, question, current_uncertainty)
@@ -139,23 +145,18 @@ class ID3:
         #   - Recursively build the true, false branches.
         #   - Build the Question node which contains the best question with true_branch, false_branch as children
 
-        if isinstance(rows[0], np.float64) or len(rows) <= self.min_for_pruning:
-            print("1 sample")
-            print(rows.shape)
+        if len(rows) <= self.min_for_pruning:
             return Leaf(rows, labels)
 
         best_gain, best_question, best_true_rows, best_true_labels, best_false_rows, best_false_labels = \
             self.find_best_split(rows, labels)
 
         if best_gain <= 0:
-            print("no gain")
-            print(rows.shape)
             return Leaf(rows, labels)
 
         true_branch, false_branch = self.build_tree(best_true_rows, best_true_labels), \
                                     self.build_tree(best_false_rows, best_false_labels)
 
-        print(best_question.column, best_question.value)
         return DecisionNode(best_question, true_branch, false_branch)
 
     def fit(self, x_train, y_train):
@@ -165,7 +166,7 @@ class ID3:
         :param y_train: training data labels.
         """
         # TODO: Build the tree that fits the input data and save the root to self.tree_root
-        self.tree_root = self.build_tree(x_train, y_train)
+        self.tree_root = self.build_tree(np.array(x_train), np.array(y_train))
 
     def predict_sample(self, row, node: DecisionNode | Leaf = None):
         """
@@ -199,7 +200,7 @@ class ID3:
         """
         # TODO:
         #  Implement ID3 class prediction for set of data.
-
-        y_pred = [self.predict_sample(row) for row in rows]
+        rows = np.array(rows)
+        y_pred = np.array([self.predict_sample(row) for row in rows])
 
         return y_pred

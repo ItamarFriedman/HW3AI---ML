@@ -2,6 +2,8 @@ import pathlib
 
 import numpy as np
 import pandas as pd
+import matplotlib
+matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
 from numpy.random import RandomState
 from sklearn.model_selection import KFold
@@ -14,8 +16,10 @@ from sklearn.model_selection import KFold
 ========================================================================
 """
 
-ID1 = 315173344  # TODO: change it to your personal ID
-ID2 = 987654321  # TODO: change it to your personal ID 
+#ID1 = 315173344  # TODO: change it to your personal ID
+#ID2 = 206458390  # TODO: change it to your personal ID
+ID1 = 123456789
+ID2 = 987654321
 
 
 ID_KEY = ID1+ID2%1000000000
