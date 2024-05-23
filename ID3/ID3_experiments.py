@@ -50,8 +50,6 @@ def find_best_pruning_m(train_dataset: np.array, m_choices, num_folds=5):
             model.fit(cv_x_train, cv_y_train)
             cv_scores.append(accuracy(cv_y_val, model.predict(cv_x_val)))
         accuracies.append(cv_scores)
-        print(count, "finished")
-        count+=1
         # ========================
 
     best_m_idx = np.argmax([np.mean(acc) for acc in accuracies])
