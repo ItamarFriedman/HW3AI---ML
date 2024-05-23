@@ -74,7 +74,8 @@ def basic_experiment(x_train, y_train, x_test, y_test, formatted_print=False):
     acc = None
 
     # ====== YOUR CODE: ======
-    id3_model = ID3(label_names=attributes_names) # todo: load feature names?
+    attributes_names, _, _ = load_data_set('ID3')
+    id3_model = ID3(label_names=attributes_names)
     id3_model.fit(x_train, y_train)
 
     y_pred = id3_model.predict(x_test)
@@ -101,7 +102,7 @@ def cross_validation_experiment(plot_graph=True):
 
     best_m = None
     accuracies = []
-    m_choices = list(range(20, 26, 1))
+    m_choices = [20, 25, 30, 50, 100]
     num_folds = 5
 
     # ====== YOUR CODE: ======

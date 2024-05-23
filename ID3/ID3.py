@@ -1,7 +1,7 @@
-from __future__ import annotations
 import math
 
 import numpy
+import numpy as np
 import pandas as pd
 from DecisonTree import Leaf, Question, DecisionNode, class_counts, unique_vals
 from utils import *
@@ -35,7 +35,7 @@ class ID3:
         _entropy = 0.0
 
         samples = len(rows)
-        probabilities = [value / samples for key, value in counts.items()]
+        probabilities = [np.divide(value, samples) for key, value in counts.items()]
         _entropy = -np.sum([num * np.log2(num) for num in probabilities])
         return _entropy
 
@@ -58,8 +58,8 @@ class ID3:
 
         info_gain_value = 0.0
         total_samples = len(left) + len(right)
-        left_weight = len(left) / total_samples
-        right_weight = len(right) / total_samples
+        left_weight = np.divide(len(left), total_samples)
+        right_weight = np.divide(len(right), total_samples)
         info_gain_value = current_info_gain - right_weight * self.entropy(right, right_labels) - \
                           left_weight * self.entropy(left, left_labels)
 
@@ -113,16 +113,23 @@ class ID3:
         best_false_rows, best_false_labels = None, None
         best_true_rows, best_true_labels = None, None
         current_uncertainty = self.entropy(rows, labels)
-
         for feature in range(len(rows[0])):
             vals = sorted(unique_vals(rows, feature))
+            # vals = sorted(rows[:, feature])  ====> with duplicates
             thresholds = vals
             if len(vals) > 1: # more than one value
                 thresholds = []
                 for i in range(0, len(vals)-1):
-                    thresholds.append((vals[i]+vals[i+1])/2)
+                    thresholds.append(np.mean([vals[i], vals[i+1]]))
             for value in thresholds:
-                question = Question(self.label_names[feature], feature, value)  # todo: feature name
+                ##########################
+                # checking target index: #
+                feature_name = self.label_names[feature]
+                if self.target_attribute in self.label_names:
+                    if feature >= self.label_names.index(self.target_attribute):
+                        feature_name = self.label_names[feature + 1]
+                ##########################
+                question = Question(feature_name, feature, value)
                 gain, true_rows, true_labels, false_rows, false_labels = \
                     self.partition(rows, labels, question, current_uncertainty)
                 if gain >= best_gain:
@@ -168,7 +175,7 @@ class ID3:
         # TODO: Build the tree that fits the input data and save the root to self.tree_root
         self.tree_root = self.build_tree(np.array(x_train), np.array(y_train))
 
-    def predict_sample(self, row, node: DecisionNode | Leaf = None):
+    def predict_sample(self, row, node = None):
         """
         Predict the most likely class for single sample in subtree of the given node.
         :param row: vector of shape (1,D).
